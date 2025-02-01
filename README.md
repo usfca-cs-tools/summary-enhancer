@@ -14,7 +14,7 @@ Summary Enhancer helps you:
 
 1. Ensure that Python 3.12 or later is installed.
 2. Clone the repository:
-   git clone https://example.com/your-repo.git
+   git clone https://github.com/usfca-cs-tools/summary-enhancer
 3. Navigate into the project directory:
    cd summary-enhancer
 4. Install the required dependencies:
