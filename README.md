@@ -1,6 +1,6 @@
 # Summary Enhancer
 
-Summary Enhancer is a tool for enhancing and improving text summaries from transcriptions using LLMs. It finds key concepts and appends a list of potentially relevant links at the end of the summary.
+Summary Enhancer is a tool for enhancing and improving text summaries from transcriptions using LLMs. It finds key concepts and appends a list of potentially relevant links at the end of the summary. The final output is in markdown format.
 
 ## Overview
 
