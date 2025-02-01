@@ -1,0 +1,2 @@
+Today's lecture covered machine learning using scikit-learn.
+We discussed supervised learning algorithms including random forests.

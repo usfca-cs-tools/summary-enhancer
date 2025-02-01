@@ -1,0 +1,193 @@
+#!/usr/bin/env python3
+
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
+
+import os
+from typing import List, Dict, Set
+import sys
+
+import litellm
+import googlesearch
+
+class SummaryEnhancer:
+    def __init__(self, model: str = "openai/o3-mini", temperature: float = 0.0): 
+        """Initialize the SummaryEnhancer"""
+        self.model = model
+        self.temperature = temperature
+
+    def llm_complete(self, prompt: str) -> str:
+        """Get a completion from the LLM."""
+
+        response = litellm.completion(
+            model=self.model,
+            messages=[{"content": f"{prompt}", "role": "user"}]
+        )
+
+        return response.choices[0].message.content
+
+    def convert_to_markdown(self, text: str) -> str:
+        """Convert cleaned text to markdown format using LLM."""
+        
+        prompt = (
+            "Convert the following text to well-formatted markdown. "
+            "Use appropriate headers, lists, and emphasis. "
+            "Preserve the key information and structure. "
+            "Clean up the writing and clarify the text as needed. "
+            "Convert the voice from first person to third person. "
+            "\n\n"
+            "Text:\n\n"
+        )
+        
+        response_text = self.llm_complete(prompt + text)
+        return response_text
+
+    def extract_key_concepts(self, text: str) -> str:
+        """Extract key technical concepts, services, and applications."""
+        
+        prompt = (
+            "Extract the key elements from the text. "
+            "Elements include concepts, services, application, "
+            "libraries, framworks, and source code from the text. "
+            "List each element on a separate line. "
+            "Only list the elements, do not provide any other text or "
+            "explanations. Do not provide other syntax like bullets, just "
+            "print the element string on each line\n\n"
+            "Text:\n\n"
+        )
+
+        response_text = self.llm_complete(prompt + text)
+        element_list = response_text.split('\n')
+        return element_list
+
+    def google_search(self, query, num_results=3):
+        """
+        Perform a Google search and return top results.
+        
+        Args:
+            query (str): The search query
+            num_results (int): Number of results to return (default: 3)
+        
+        Returns:
+            list: List of result URLs
+        """
+        max_attempts = 3
+        delay_between_attempts = 2  # delay in seconds before retrying
+        for attempt in range(1, max_attempts + 1):
+            try:
+                print(f"[Info] Attempt {attempt}/{max_attempts}: Performing search for '{query}'...")
+                results = list(googlesearch.search(query, num_results=num_results, unique=True))
+                if not results:
+                    print(f"[Warning] No results found for query: {query}", file=sys.stderr)
+                return results
+            except Exception as e:
+                print(f"[Error] Failed search on attempt {attempt}: {str(e)}", file=sys.stderr)
+                if attempt < max_attempts:
+                    print("[Info] Retrying...\n")
+                    import time
+                    time.sleep(delay_between_attempts)
+        print(f"[Error] All {max_attempts} attempts failed. Returning empty result list.", file=sys.stderr)
+        return []
+
+    def search_references(self, concepts: Set[str]) -> Dict[str, list]:
+        """Search for documentation links for each concept."""
+        print("== Searching for concept links ===")
+        
+        references = {}
+        for concept in concepts:
+            url_list = self.google_search(concept)
+            print(f"Concept: {concept}")
+            if url_list:
+                references[concept] = url_list
+                for url in url_list:
+                    print(f"{url}")
+                # Add a small delay between requests
+                import time
+                time.sleep(1)
+        
+        return references
+
+    def format_output(self, markdown_text: str, references: Dict[str, str]) -> str:
+        """Format the final markdown output with references section."""
+        print("Formatting final output...")
+        
+        if not references:
+            return markdown_text
+        
+        # Add references section
+        output = markdown_text + "\n\n## References\n\n"
+        for concept, url_list in sorted(references.items()):
+            output += f"- {concept}:\n"
+            for url in url_list:
+                output += f"  - [{url}]({url})\n"
+        
+        return output
+
+    def enhance_summary(self, input_text: str) -> str:
+        """Main method to enhance the summary."""
+        # Clean the input text
+        #cleaned_text = self.clean_text(input_text)
+        
+        # Convert to markdown
+        print("=== Converting to markdown format... ===")
+        markdown_text = self.convert_to_markdown(input_text)
+        
+        # Extract key concepts
+        print("=== Extracting key concepts... ===")
+        concepts = self.extract_key_concepts(markdown_text)
+        print(f"=== Extracted concepts ===")
+        for concept in concepts:
+            print(concept.strip())
+        
+        # Search for references
+        print("=== Searching for references... ===")    
+        references = self.search_references(concepts)
+        
+        # Format final output
+        enhanced_summary = self.format_output(markdown_text, references)
+        
+        return enhanced_summary
+
+def main():
+    """Example usage of the SummaryEnhancer."""
+    
+    # Initialize enhancer
+    enhancer = SummaryEnhancer()
+    
+    # Check if a file was provided as argument
+    import sys
+    if len(sys.argv) > 1:
+        input_file = sys.argv[1]
+        try:
+            with open(input_file, 'r') as f:
+                input_text = f.read()
+        except Exception as e:
+            print(f"Error reading file {input_file}: {e}")
+            sys.exit(1)
+        base, ext = os.path.splitext(input_file)
+        if ext == "":
+            output_file = input_file + ".md"
+        else:
+            output_file = base + ".md"
+    else:
+        # Use example input
+        input_text = """
+        Today's lecture covered the basics of machine learning using scikit-learn.
+        We discussed supervised learning algorithms including random forests and support vector machines.
+        We also looked at TensorFlow and PyTorch for deep learning applications.
+        The professor demonstrated code examples using Jupyter notebooks and explained
+        how to use pandas for data preprocessing.
+        """
+        output_file = 'enhanced-summary.md'
+    
+    # Enhance the summary
+    enhanced_summary = enhancer.enhance_summary(input_text)
+    
+    # Save the result
+    with open(output_file, 'w') as f:
+        f.write(enhanced_summary)
+    
+    print(f"\nEnhanced summary has been saved to '{output_file}'")
+
+if __name__ == "__main__":
+    main()
