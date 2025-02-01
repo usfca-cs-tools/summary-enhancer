@@ -26,9 +26,13 @@ Summary Enhancer helps you:
 $ cat test.text
 Today's lecture covered machine learning using scikit-learn.
 We discussed supervised learning algorithms including random forests.
+```
 
+```
 $ ./summary-enhancer test.txt
+```
 
+```
 $ cat test.md
 # Machine Learning Lecture Overview
 
