@@ -47,7 +47,7 @@ class SummaryEnhancer:
         
         prompt = (
             "Extract the key elements from the text. "
-            "Elements include concepts, services, application, "
+            "Elements include concepts, services, applications, "
             "libraries, framworks, and source code from the text. "
             "List each element on a separate line. "
             "Only list the elements, do not provide any other text or "
