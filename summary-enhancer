@@ -135,12 +135,13 @@ class SummaryEnhancer:
         
         return output
 
-    def enhance_summary(self, input_text: str, additional_prompt: Optional[str] = None) -> str:
+    def enhance_summary(self, input_text: str, additional_prompt: Optional[str] = None, include_references: bool = False) -> str:
         """Main method to enhance the summary.
         
         Args:
             input_text: The text to enhance
             additional_prompt: Optional additional instructions for markdown conversion
+            include_references: Whether to include references in the output (default: False)
         """
         # Clean the input text
         #cleaned_text = self.clean_text(input_text)
@@ -149,16 +150,18 @@ class SummaryEnhancer:
         print("=== Converting to markdown format... ===")
         markdown_text = self.convert_to_markdown(input_text, additional_prompt)
         
-        # Extract key concepts
-        print("=== Extracting key concepts... ===")
-        concepts = self.extract_key_concepts(markdown_text)
-        print(f"=== Extracted concepts ===")
-        for concept in concepts:
-            print(concept.strip())
-        
-        # Search for references
-        print("=== Searching for references... ===")    
-        references = self.search_references(concepts)
+        references = {}
+        if include_references:
+            # Extract key concepts
+            print("=== Extracting key concepts... ===")
+            concepts = self.extract_key_concepts(markdown_text)
+            print(f"=== Extracted concepts ===")
+            for concept in concepts:
+                print(concept.strip())
+            
+            # Search for references
+            print("=== Searching for references... ===")
+            references = self.search_references(concepts)
         
         # Format final output
         enhanced_summary = self.format_output(markdown_text, references)
@@ -172,6 +175,7 @@ def main():
     parser = argparse.ArgumentParser(description='Enhance text summaries with markdown formatting and references.')
     parser.add_argument('input_file', nargs='?', help='Input file to process (optional)')
     parser.add_argument('-p', '--prompt', help='Additional prompt text for markdown conversion')
+    parser.add_argument('-r', '--refs', action='store_true', help='Include references in the output (disabled by default)')
     
     args = parser.parse_args()
     
@@ -203,7 +207,7 @@ def main():
         output_file = 'enhanced-summary.md'
     
     # Enhance the summary
-    enhanced_summary = enhancer.enhance_summary(input_text, args.prompt)
+    enhanced_summary = enhancer.enhance_summary(input_text, args.prompt, args.refs)
     
     # Save the result
     with open(output_file, 'w') as f:
